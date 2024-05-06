@@ -37,7 +37,7 @@ jobs:
       - name: Test with pytest
         run: |
           pip install pytest pytest-cov
-          pytest Test/tests.py --cov=com
+          pytest Test/test_case.py --cov=com
 
   build:
     needs: pytest
