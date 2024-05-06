@@ -6,7 +6,5 @@ RUN pip wheel --no-cache-dir --no-deps --wheel /wheels install -r requirements.t
 
 FROM python:3.11.9-alpine3.19
 
-WORKDIR /nice_bot
-
-COPY --from=builder /wheels /wheels
+COPY --from=builder /wheels .
 CMD ["python", "run.py"]
