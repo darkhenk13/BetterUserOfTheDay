@@ -1,12 +1,8 @@
-FROM python:3.11 as builder
+FROM python:3.11
 
 COPY . .
 
-RUN pip wheel --no-cache-dir --no-deps --wheel /wheels install -r requirements.txt
-
-FROM python:3.11.9-alpine3.19
-
-WORKDIR /nice_bot
-
-COPY --from=builder /wheels nice_bot
+#WORKDIR /usr/src/app
+#COPY requirements.txt ./
+RUN pip install -r requirements.txt
 CMD ["python", "run.py"]
