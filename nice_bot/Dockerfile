@@ -8,5 +8,5 @@ FROM python:3.11.9-alpine3.19
 
 WORKDIR /nice_bot
 
-COPY --from=builder /wheels nice_bot
+COPY --from=builder /wheels /wheels
 CMD ["python", "run.py"]
