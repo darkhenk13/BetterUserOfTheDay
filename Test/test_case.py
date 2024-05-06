@@ -5,10 +5,14 @@ from peewee import SqliteDatabase
 from telegram import Update, User, Message, Chat
 
 
-from nice_bot.db_init import PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice
+from nice_bot.db_init import PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice, CarmicDicesEnabled
 from nice_bot.run import (get_stickers_enable, create_user, unreg_in_data, update_pidor_stats,
                           unreg, reg, get_all_members,get_random_id, get_user_coefficient,
-                          get_random_id_carmic,check_coefficient_for_chosen)
+                          get_random_id_carmic,check_coefficient_for_chosen,check_coefficient_for_others,
+                          update_coefficient_for_users, get_pidor_stats, get_user_percentage_nice_pidor,
+                          reset_stats_data, update_current, is_not_time_expired,add_chat_to_carmic_dices_in_db,
+                          remove_chat_from_carmic_dices_in_db, get_current_user, set_full_name_and_nickname_in_db,
+                          get_full_name_from_db)
 
 @pytest.fixture
 def fake_update():
@@ -68,17 +72,17 @@ def setup_database():
     PidorStickers._meta.database = test_db
     Members._meta.database = test_db
 
-    test_db.bind([PidorStickers, Members, Stats, PidorStats, CurrentPidor,CurrentNice], bind_refs=False, bind_backrefs=False)
+    test_db.bind([PidorStickers, Members, Stats, PidorStats, CurrentPidor,CurrentNice,CarmicDicesEnabled], bind_refs=False, bind_backrefs=False)
     #test_db.bind([Members], bind_refs=False, bind_backrefs=False)
 
     # Создание таблиц в тестовой базе данных
     test_db.connect(reuse_if_open=True)  # Используйте reuse_if_open=True для предотвращения ошибок
-    test_db.create_tables([PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice])
+    test_db.create_tables([PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice,CarmicDicesEnabled])
 
     yield  # Здесь тесты будут выполняться
 
     # Закрытие соединения и очистка базы данных после тестов
-    test_db.drop_tables([PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice])
+    test_db.drop_tables([PidorStickers, Members, Stats, PidorStats, CurrentPidor, CurrentNice,CarmicDicesEnabled])
     test_db.close()
 
 # Использование mock.patch для имитации подключения к базе данных
@@ -248,10 +252,150 @@ def test_check_coefficient_for_chosen():
     assert check_coefficient_for_chosen(21) == 21
 
 
+def test_check_coefficient_for_others():
+    assert check_coefficient_for_others(5) == 6
+    assert check_coefficient_for_others(0) == 1
+    assert check_coefficient_for_others(21) == 20
 
 
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_update_coefficient_for_users(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Members.create(chat_id=331,
+                   member_id=331,
+                   coefficient=10,
+                   pidor_coefficient=10,
+                   full_name='test',
+                   nick_name='test')
+
+    assert update_coefficient_for_users(331, 2, 'nice') == None
+    assert update_coefficient_for_users(331, 2, 'pidor') == None
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_pidor_stats(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Stats.create(chat_id=901, member_id=901, count=0)
+    Stats.create(chat_id=902, member_id=902, count=0)
+
+    assert get_pidor_stats(chat_id=901, stats_type='stats') == {901: 0}
+    assert get_pidor_stats(chat_id=901, stats_type='pidor_stats') == 'Ни один пользователь не зарегистрирован, статистики нет'
+    assert get_pidor_stats(chat_id=902, stats_type='stats') == {902: 0}
 
 
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_user_percentage_nice_pidor(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Stats.create(chat_id=911, member_id=911, count=0)
+    PidorStats.create(chat_id=912, member_id=912, count=10)
+    PidorStats.create(chat_id=913, member_id=913, count=50)
+    PidorStats.create(chat_id=914, member_id=914, count=100)
+
+    assert get_user_percentage_nice_pidor(911, 911) == {'member_id': 911, 'nice': 50, 'pidor': 50}
+    assert get_user_percentage_nice_pidor(912, 912) == {'member_id': 912, 'nice': 0, 'pidor': 100}
+    assert get_user_percentage_nice_pidor(913, 913) == {'member_id': 913, 'nice': 0, 'pidor': 100}
+    assert get_user_percentage_nice_pidor(914, 914) == {'member_id': 914, 'nice': 0, 'pidor': 100}
+
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_reset_stats_data(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+
+    Stats.create(chat_id=921, member_id=921, count=5)
+    PidorStats.create(chat_id=921, member_id=921, count=10)
+    Members.create(chat_id=921, member_id=921, coefficient=10, pidor_coefficient=10, full_name='test',
+                   nick_name='test')
+    CurrentNice.create(chat_id=921, member_id=921, timestamp=0)
+
+    assert reset_stats_data(921) == None
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_update_current(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+    CurrentNice.create(chat_id=931, member_id=931, timestamp=0)
+    CurrentNice.create(chat_id=932, member_id=932, timestamp=0)
+
+    assert update_current(931, 'current_nice', 931) == None
+    assert update_current(932, 'current_pidor', 932) == None
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_is_not_time_expired(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+    CurrentNice.create(chat_id=941, member_id=941, timestamp=0)
+    assert is_not_time_expired(941, 'current_nice') == False
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_add_chat_to_carmic_dices_in_db(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    CarmicDicesEnabled.create(chat_id=952)
+
+    assert add_chat_to_carmic_dices_in_db(951) == None
+    assert add_chat_to_carmic_dices_in_db(952) == None
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_remove_chat_from_carmic_dices_in_db(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    CarmicDicesEnabled.create(chat_id=961)
+
+    assert remove_chat_from_carmic_dices_in_db(961) == None
+    assert remove_chat_from_carmic_dices_in_db(962) == None
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_current_user(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    CurrentNice.create(chat_id=971, member_id=971, timestamp=0)
+    CurrentNice.create(chat_id=972, member_id=972, timestamp=0)
+
+    assert get_current_user(971, 'current_nice') == {'id': 971, 'timestamp': 0}
+    assert get_current_user(972, 'current_nice') == {'id': 972, 'timestamp': 0}
+
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_set_full_name_and_nickname_in_db(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Members.create(chat_id=981, member_id=981, coefficient=10, pidor_coefficient=10, full_name='test',
+                   nick_name='test')
+
+    assert set_full_name_and_nickname_in_db(981, 981, 'test1', 'test') == None
+
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_full_name_from_db(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Members.create(chat_id=991, member_id=991, coefficient=10, pidor_coefficient=10, full_name='test',
+                   nick_name='test')
+
+    assert get_full_name_from_db(991, 991) == 'test'
 
 # Очистка данных после теста
 # @pytest.fixture(autouse=True)
