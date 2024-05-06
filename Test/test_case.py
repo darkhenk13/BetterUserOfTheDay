@@ -12,7 +12,7 @@ from nice_bot.run import (get_stickers_enable, create_user, unreg_in_data, updat
                           update_coefficient_for_users, get_pidor_stats, get_user_percentage_nice_pidor,
                           reset_stats_data, update_current, is_not_time_expired,add_chat_to_carmic_dices_in_db,
                           remove_chat_from_carmic_dices_in_db, get_current_user, set_full_name_and_nickname_in_db,
-                          get_full_name_from_db)
+                          get_full_name_from_db,get_nickname_from_db)
 
 @pytest.fixture
 def fake_update():
@@ -396,6 +396,20 @@ def test_get_full_name_from_db(mock_connect, mock_close, setup_database):
                    nick_name='test')
 
     assert get_full_name_from_db(991, 991) == 'test'
+
+@mock.patch('nice_bot.run.dbhandle.connect')
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_nickname_from_db(mock_connect, mock_close, setup_database):
+    mock_connect.return_value = setup_database
+    mock_close.return_value = setup_database
+
+    Members.create(chat_id=1001, member_id=1001, coefficient=10, pidor_coefficient=10, full_name='test',
+                   nick_name='test')
+
+    assert get_nickname_from_db(1001, 1001) == 'test'
+
+
+
 
 # Очистка данных после теста
 # @pytest.fixture(autouse=True)
