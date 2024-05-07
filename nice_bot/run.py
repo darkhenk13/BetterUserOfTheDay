@@ -4,8 +4,8 @@ import datetime
 import time
 import telegram.error
 import peewee
-from nice_bot.db_init import *
-from nice_bot import messages,stickers_list
+from db_init import *
+import messages,stickers_list
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
@@ -26,7 +26,7 @@ def create_user(chat_id, user_id, user_full_name, user_nickname):
         return False
 
     q = Members.create(chat_id=chat_id, member_id=user_id, coefficient=10, pidor_coefficient=10, full_name=user_full_name, nick_name=user_nickname)
-
+    print(q.id)
     stats_of_user = 0
     pidor_stats_of_user = 0
     for k in Stats.select().where((Stats.chat_id == chat_id) & (Stats.member_id == user_id)):
@@ -253,6 +253,7 @@ def get_pidor_stats(chat_id, stats_type):
             return 'Ни один пользователь не зарегистрирован, статистики нет'
         else:
             return stats
+        print(stats)
     except Exception:
         dbhandle.close()
 
