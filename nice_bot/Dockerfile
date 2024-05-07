@@ -18,7 +18,7 @@ FROM python:3.11.9-alpine3.19 as runner
 
 COPY --from=builder /opt/venv /opt/venv
 
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH" PYTHONPATH="/app/nice_bot"
 
 WORKDIR /app/nice_bot
 
