@@ -4,10 +4,15 @@ import datetime
 import time
 import telegram.error
 import peewee
-from nice_bot.db_init import *
-from nice_bot import messages,stickers_list
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+
+try:
+    from nice_bot.db_init import *
+    from nice_bot import messages,stickers_list
+except ImportError:
+    from db_init import *
+    import messages, stickers_list
 
 
 logging.basicConfig(
