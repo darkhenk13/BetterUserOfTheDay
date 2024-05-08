@@ -17,7 +17,7 @@ services:
       resources:
         limits:
           cpus: '0.400'
-          memory: 256M
+          memory: 192M
   nicebot:
     image: ghcr.io/darkhenk13/betteruseroftheday:unitest
     environment:
@@ -34,4 +34,4 @@ services:
       resources:
         limits:
           cpus: '0.250'
-          memory: 250M
+          memory: 96M
