@@ -19,7 +19,7 @@ services:
           cpus: '0.400'
           memory: 192M
   nicebot:
-    image: ghcr.io/darkhenk13/betteruseroftheday:unitest
+    image: ghcr.io/darkhenk13/betteruseroftheday:unitest_fix
     environment:
       BOT_TOKEN: ${BOT_TOKEN}
       DB_USER: ${DB_USER}

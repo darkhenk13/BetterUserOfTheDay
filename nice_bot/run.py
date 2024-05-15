@@ -527,11 +527,11 @@ def get_stickers_enable(chat_id):
         result = ''
         for pt in PidorStickers.select().where(PidorStickers.chat_id == chat_id):
             result = pt.enable
+        dbhandle.close()
         if result == True:
             return True
         else:
             return False
-        dbhandle.close()
 
 
 async def stickers(update: Update, context: ContextTypes.DEFAULT_TYPE):
