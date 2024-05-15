@@ -87,10 +87,11 @@ def setup_database():
 
 # Использование mock.patch для имитации подключения к базе данных
 @mock.patch('nice_bot.run.dbhandle.connect')
-def test_get_stickers_enable(mock_connect, setup_database):
+@mock.patch('nice_bot.run.dbhandle.close')
+def test_get_stickers_enable(mock_connect, mock_close, setup_database):
     # Имитация подключения к базе данных
     mock_connect.return_value = setup_database
-
+    mock_close.return_value = setup_database
     # Предполагаем, что chat_id 123 существует и у него включены стикеры
     chat_id = 123
     PidorStickers.create(chat_id=chat_id, enable=True)
