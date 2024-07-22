@@ -4,7 +4,7 @@ on:
   #schedule:
     #- cron: '27 11 * * *'
   push:
-    branches: [ "master" ]
+    branches: [ "darkhenk13-patch-1" ]
     tags: [ v* ]
   pull_request:
     branches: [ "master" ]
