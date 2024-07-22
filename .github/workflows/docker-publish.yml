@@ -39,9 +39,9 @@ jobs:
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@v3 # v3.0.0
         with:
-          registry: gcr.io
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Extract Docker metadata
