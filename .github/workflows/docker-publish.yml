@@ -40,8 +40,8 @@ jobs:
         uses: docker/login-action@v3 # v3.0.0
         with:
           registry: gcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
 
       - name: Extract Docker metadata
