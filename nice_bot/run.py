@@ -1,3 +1,4 @@
+import inspect
 import logging
 import random
 import datetime
@@ -6,6 +7,51 @@ import telegram.error
 import peewee
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+import httpx
+from telegram.request._httpxrequest import *
+
+import anyio
+
+from nice_bot.httpx_metrics import AsyncPrometheusTransport
+from nice_bot.httpx_metrics.async_metrics import (
+    AsyncDownloadDurationMetric,
+    AsyncProcessingRequestsMetric,
+    AsyncRequestsDurationMetric,
+    AsyncTotalRequestsMetric,
+)
+
+#from httpx_metrics import AsyncPrometheusTransport
+
+from functools import wraps
+
+metrics_transport = AsyncPrometheusTransport(
+    next_transport=httpx.AsyncHTTPTransport(),
+    metrics=[
+        AsyncRequestsDurationMetric(),
+        AsyncTotalRequestsMetric(),
+        AsyncProcessingRequestsMetric(),
+        AsyncDownloadDurationMetric(),
+    ],
+    exporter_port=8000,
+)
+class MonkeyPatcher:
+    def __init__(self, HTTPXRequest):
+        self.HTTPXRequest = HTTPXRequest
+
+    def patch_httpx_request(self):
+
+        def _build_client_monkey_patched(self) -> httpx.AsyncClient:
+            return httpx.AsyncClient(transport=metrics_transport, **self._client_kwargs)  # type: ignore[arg-type]
+
+        self.HTTPXRequest._build_client = _build_client_monkey_patched
+
+
+
+
+# Usage
+patcher = MonkeyPatcher(HTTPXRequest)
+patcher.patch_httpx_request()
+
 
 try:
     from nice_bot.db_init import *
@@ -13,6 +59,7 @@ try:
 except ImportError:
     from db_init import *
     import messages, stickers_list
+
 
 
 logging.basicConfig(
@@ -806,6 +853,7 @@ async def switch_on_carmic_dices_in_chat(update: Update, context: ContextTypes.D
 
 if __name__ == '__main__':
     try:
+        #start_http_server(8000)
         dbhandle.connect()
         Members.create_table()
         PidorStats.create_table()
@@ -833,4 +881,6 @@ if __name__ == '__main__':
                               pidor_stats_handler, reset_stats_handler, percent_stats_handler, stickers_handler,
                               switch_on_carmic_dices_in_chat_handler, CallbackQueryHandler(confirm_dialogs)])
     application.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, member_left))
+
     application.run_polling()
+
