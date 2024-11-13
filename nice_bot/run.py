@@ -77,7 +77,6 @@ def create_user(chat_id, user_id, user_full_name, user_nickname):
         if is_user_in_chat:
             dbhandle.close()
             return False
-        dbhandle.close()
     except Exception:
         dbhandle.close()
 
@@ -126,10 +125,13 @@ def unreg_in_data(chat_id, user_id):
 
 
 def get_all_chat_ids():
-    dbhandle.connect()
-    chat_ids = [i.chat_id for i in Members.select(Members.chat_id).distinct()]
-    dbhandle.close()
-    return chat_ids
+    try:
+        dbhandle.connect()
+        chat_ids = [i.chat_id for i in Members.select(Members.chat_id).distinct()]
+        dbhandle.close()
+        return chat_ids
+    except Exception:
+        dbhandle.close()
 
 
 def get_all_members(chat_id):
@@ -139,7 +141,7 @@ def get_all_members(chat_id):
         dbhandle.close()
         return members
     except Exception:
-        dbhandle.connect()
+        dbhandle.close()
 
 
 def get_random_id(chat_id, pidor_or_nice):
@@ -574,6 +576,7 @@ async def pidor(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # original
 
 def get_stickers_enable(chat_id):
+    try:
         dbhandle.connect()
         result = ''
         for pt in PidorStickers.select().where(PidorStickers.chat_id == chat_id):
@@ -583,6 +586,8 @@ def get_stickers_enable(chat_id):
             return True
         else:
             return False
+    except Exception:
+        dbhandle.close()
 
 
 async def stickers(update: Update, context: ContextTypes.DEFAULT_TYPE):
