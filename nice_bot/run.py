@@ -88,7 +88,7 @@ def get_all_members(chat_id):
         dbhandle.close()
         return members
     except Exception:
-        dbhandle.connect()
+        dbhandle.close()
 
 
 def get_random_id(chat_id, pidor_or_nice):
@@ -523,6 +523,7 @@ async def pidor(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # original
 
 def get_stickers_enable(chat_id):
+    try:
         dbhandle.connect()
         result = ''
         for pt in PidorStickers.select().where(PidorStickers.chat_id == chat_id):
@@ -532,6 +533,8 @@ def get_stickers_enable(chat_id):
             return True
         else:
             return False
+    except Exception:
+        dbhandle.close()
 
 
 async def stickers(update: Update, context: ContextTypes.DEFAULT_TYPE):
