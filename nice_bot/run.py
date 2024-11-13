@@ -69,13 +69,17 @@ logging.basicConfig(
 
 
 def create_user(chat_id, user_id, user_full_name, user_nickname):
-    dbhandle.connect()
-    is_user_in_chat = False
-    for i in Members.select().where((Members.chat_id == chat_id) & (Members.member_id == user_id)):
-        is_user_in_chat = True
-    if is_user_in_chat:
+    try:
+        dbhandle.connect()
+        is_user_in_chat = False
+        for i in Members.select().where((Members.chat_id == chat_id) & (Members.member_id == user_id)):
+            is_user_in_chat = True
+        if is_user_in_chat:
+            dbhandle.close()
+            return False
         dbhandle.close()
-        return False
+    except Exception:
+        dbhandle.close()
 
     q = Members.create(chat_id=chat_id, member_id=user_id, coefficient=10, pidor_coefficient=10, full_name=user_full_name, nick_name=user_nickname)
     print(q.id)
