@@ -388,10 +388,15 @@ def update_current(chat_id, current_dict, user_id):
 
 def is_not_time_expired(chat_id, type_of_current):
     current = get_current_user(chat_id, type_of_current)
-    current_timestamp = current['timestamp']
-    day_timestamp = time.mktime(datetime.date.today().timetuple())
-    return current_timestamp > day_timestamp
+    try:
+        current_timestamp = current['timestamp']
+        day_timestamp = time.mktime(datetime.date.today().timetuple())
+        return current_timestamp > day_timestamp
+    except Exception:
+        print("Error")
 
+        current_timestamp = time.mktime(datetime.date.today().timetuple())
+        return current_timestamp
 
 def add_chat_to_carmic_dices_in_db(chat_id):
     try:
